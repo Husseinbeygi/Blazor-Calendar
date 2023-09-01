@@ -1,0 +1,8 @@
+﻿<div class="monthly-day monthly-day--disabled" style="cursor:pointer"
+		@onclick="HandleClickOutsideCurrentMonthClick">
+</div>
+
+@code {
+	[Parameter]
+	public EventCallback<MouseEventArgs> HandleClickOutsideCurrentMonthClick { get; set; } = new();
+}

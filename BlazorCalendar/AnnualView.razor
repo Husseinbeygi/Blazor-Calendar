@@ -1,0 +1,154 @@
+﻿@using BlazorCalendar.Models
+@using BlazorCalendar.Styles
+
+@inherits CalendarBase
+
+@{
+    string labelMonth = "";
+    string labelDay = "";
+    string? CSSbackground = null;
+    string taskContent = "";
+    string? taskColor = null;
+    string? taskComment = null;
+    string? classPin = null;
+    string? classPointer = null;
+    int tasksCounter;
+    bool draggable = false;
+    string? ondragover = null;
+    string? disabled = null;   
+    string? isHidden = DisplayedView == DisplayedView.Annual ? null : "hidden-element";
+    bool NotbeDraggeble = false; 
+    string borderStyle = "";
+}
+<div class="frame">
+
+    <div class=@($"{isHidden} calendar-container {Class}") style="@Style">
+
+    @for (var month = 0; month <= Months; month++)
+    {
+        m = FirstDate.AddMonths(month);
+        var day = new System.DateTime(m.Year, m.Month, 1);
+        labelMonth = day.ToString("MMMM");
+
+        <div class="month-column">
+	        <div class="header-name noselect" style="@HeaderStyle" @onclick="() => HandleHeaderClick(day)">
+                @labelMonth
+            </div>
+        
+            @for (var i = 0; i < 31; i++)
+            {
+                CSSbackground = null;
+                var j = day.AddDays(i);
+                int taskID = -1;
+                if (j.Month != m.Month)
+                {
+                    j = default;
+                    labelDay = "";
+                    taskContent = "";
+                    taskColor = null;
+                    taskComment = null;
+                    classPin = null;
+                    classPointer = null;
+                    draggable = false;
+                    ondragover = null;
+                    taskID = -1;
+                    disabled = "cellule-disabled";
+                    CSSbackground = null;
+                }
+                else
+                {
+                    disabled = null;
+                    int d = (int)j.DayOfWeek;
+                    if (d == 6)
+                    {
+                        CSSbackground = $"background:{SaturdayColor}";
+                    }
+                    else if (d == 0)
+                    {
+                        CSSbackground = $"background:{SundayColor}";
+                    }
+                    else
+                    {
+                        CSSbackground = $"background:{WeekDaysColor}";
+                    }
+
+                    string jour = j.ToString("ddd").Substring(0, 1).ToUpper();
+                    labelDay = $"{jour} {j.Day.ToString()}";
+
+                    taskContent = "";
+                    taskColor = null;
+                    taskComment = null;
+                    classPin = null;
+                    classPointer = null;
+                    tasksCounter = 0;    
+                    ondragover = "event.preventDefault();";
+                    borderStyle = "";
+                    if ( TasksList != null )
+                    {
+                        for (var k = 0; k < TasksList.Length; k++)
+                        {
+                            Tasks t = TasksList[k];
+
+                            if ( t.DateStart.Date <= j.Date && j.Date <= t.DateEnd.Date )
+                            {                
+                                taskID = t.ID;
+                                tasksCounter++;
+                                if ( PriorityDisplay == PriorityLabel.Code )
+                                {   
+                                    taskContent = string.IsNullOrWhiteSpace(t.Code) ? t.Caption : t.Code;
+                                }
+                                else
+                                {   
+                                    taskContent = string.IsNullOrWhiteSpace(t.Caption) ? t.Code : t.Caption;
+                                }
+
+                                taskColor = Colors.GetHatching(t.FillStyle, t.Color);
+                                taskColor = $"{taskColor};color:{t.ForeColor}";
+
+                                taskComment = t.Comment;
+                                classPin = string.IsNullOrWhiteSpace(t.Comment) ? null : " pin";
+                                classPointer = " cursor-pointer";
+                                NotbeDraggeble = t.NotBeDraggable;
+
+                                if (t.DateStart.Date == j.Date && t.DateEnd.Date != j.Date)
+                                    borderStyle = "border-top";
+                                else if (t.DateEnd.Date == j.Date && t.DateStart.Date != j.Date)  
+                                    borderStyle = "border-bottom";
+                                else if (t.DateEnd.Date == j.Date && t.DateStart.Date == j.Date)     
+                                    borderStyle = "border-top border-bottom";
+                            }
+                        }   
+                    }
+                    if ( tasksCounter > 1 )
+                    {
+                        taskContent = "…";
+                        taskComment = null;
+                        taskColor = null;
+                        classPin = " pin-top";
+                        draggable = false; 
+                        taskID = -1;
+                    }
+                    else if ( tasksCounter == 1 )
+                    {  
+                        draggable = Draggable != true ? false : true; 
+                        if (NotbeDraggeble == true ) draggable = false; 
+                    }
+                }  
+
+                <div class=@($"cellule day-cellule noselect {disabled}") style="@CSSbackground" ondragover="@ondragover" @ondrop="() => HandleDayOnDrop(j)" @ondrop:preventDefault="true">
+                    <div class="day" style="@CSSbackground">
+                        @labelDay
+                    </div>
+                    <div id="task-@taskID" class="@($"task{classPin}{classPointer} {borderStyle}")" style="@taskColor" title="@taskComment" 
+                        @onclick="e => ClickInternal(e, j)" 
+                        @ondragstart="() => HandleDragStart(j, taskID)"
+                        draggable="@draggable.ToString()" >
+                            @taskContent
+                    </div>
+                </div>  
+            }
+        </div>
+    }
+
+    </div>
+</div>
